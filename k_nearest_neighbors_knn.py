@@ -9,9 +9,7 @@ Original file is located at
 
 import numpy as np
 import pandas as pd
-
-import os
-df = pd.read_csv("/content/KNNAlgorithmDataset.csv")
+from pathlib import Path
 
 #The Libararies Used
 
@@ -23,8 +21,17 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
 
 # Import dataset
-data_path = '/content/KNNAlgorithmDataset.csv'
-df_new = pd.read_csv(data_path)
+data_path = Path(__file__).resolve().with_name('KNNAlgorithmDataset.csv')
+if data_path.is_file():
+    df_new = pd.read_csv(data_path)
+    print(f"Using dataset: {data_path}")
+else:
+    from sklearn.datasets import load_breast_cancer
+
+    breast_cancer = load_breast_cancer()
+    df_new = pd.DataFrame(breast_cancer.data, columns=breast_cancer.feature_names)
+    df_new['diagnosis'] = pd.Series(breast_cancer.target).map({0: 'M', 1: 'B'})
+    print(f"'{data_path.name}' was not found; using scikit-learn's breast cancer dataset.")
 
 print("Shape of the new dataset:", df_new.shape)
 print("\nFirst 5 rows of the new dataset:")
@@ -54,9 +61,7 @@ plt.show()
 
 # Plot histograms of numerical features to see each frequency
 numerical_cols = df_new.select_dtypes(include=np.number).columns.tolist()
-numerical_cols.remove('id')
-if 'Unnamed: 32' in numerical_cols:
-    numerical_cols.remove('Unnamed: 32')
+numerical_cols = [col for col in numerical_cols if col not in {'id', 'Unnamed: 32'}]
 
 num_plots = len(numerical_cols)
 rows = (num_plots // 3) + (1 if num_plots % 3 > 0 else 0)
@@ -89,7 +94,7 @@ print("\nCorrelation with the target variable (diagnosis):")
 print(correlation_with_diagnosis)
 
 # 9. Declare feature vector and target variable
-X_new = df_new.drop(['id', 'diagnosis', 'Unnamed: 32'], axis=1)
+X_new = df_new.drop(columns=['id', 'diagnosis', 'Unnamed: 32'], errors='ignore')
 y_new = df_new['diagnosis']
 
 # Convert target variable to numerical
